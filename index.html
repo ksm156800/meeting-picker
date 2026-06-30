@@ -3,144 +3,191 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>모임 일정·장소 추천기</title>
+<title>모임플래너 — 일정·장소 추천기</title>
 <style>
   :root{
-    --bg:#0f1222; --panel:#171a2e; --panel2:#1e2240; --line:#2a2f55;
-    --text:#e8eaf6; --muted:#9aa0c3; --accent:#6c8cff; --accent2:#8b5cff;
-    --good:#37d39b; --warn:#ffcf5c; --bad:#ff6b81; --gold:#ffd25c;
-    --shadow:0 10px 40px rgba(0,0,0,.35);
+    --bg:#f3efe8; --surface:#ffffff; --surface2:#faf7f1;
+    --ink:#1c1b19; --muted:#7c7771; --line:#e7e0d4;
+    --accent:#e8622c; --accent2:#c54e1d; --accent-soft:#fbeee6;
+    --good:#1f9d6b; --warn:#c98a16; --bad:#d5463b; --gold:#e8622c;
+    --serif:Georgia,"Times New Roman","Nanum Myeongjo","Batang",serif;
+    --shadow:0 14px 40px rgba(60,45,30,.10);
   }
   *{box-sizing:border-box}
   body{
     margin:0; font-family:"Malgun Gothic","Segoe UI",-apple-system,Roboto,sans-serif;
-    background:radial-gradient(1200px 600px at 80% -10%,#22264a 0%,var(--bg) 55%);
-    color:var(--text); min-height:100vh; line-height:1.5; overflow-x:hidden;
+    background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.55; overflow-x:hidden;
   }
-  header{
-    padding:28px 32px 20px; border-bottom:1px solid var(--line);
-    background:linear-gradient(180deg,rgba(108,140,255,.10),transparent);
+  .accent{color:var(--accent);}
+  .muted{color:var(--muted);}
+
+  /* ===== 헤더 (랜딩 히어로) ===== */
+  header{background:var(--surface); border-bottom:1px solid var(--line);}
+  .head-inner{
+    max-width:1280px; margin:0 auto; padding:16px 32px; display:flex;
+    align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line);
   }
-  header h1{margin:0; font-size:26px; letter-spacing:-.3px;}
-  header h1 .badge{
-    font-size:12px; vertical-align:middle; margin-left:10px; padding:4px 10px;
-    border:1px solid var(--line); border-radius:999px; color:var(--muted); font-weight:600;
-    display:inline-block; white-space:nowrap;
+  .brand{display:flex; align-items:center; gap:11px;}
+  .brand-mark{
+    width:36px; height:36px; display:grid; place-items:center; font-size:20px;
+    background:var(--accent); color:#fff; border-radius:10px; box-shadow:0 6px 16px rgba(232,98,44,.3);
   }
-  header p{margin:8px 0 0; color:var(--muted); font-size:14px;}
-  .wrap{display:grid; grid-template-columns:380px 1fr; gap:24px; padding:24px 32px 56px; max-width:1280px; margin:0 auto;}
+  .brand-name{font-family:var(--serif); font-size:22px; letter-spacing:.01em; color:var(--ink);}
+  .brand-name em{color:var(--accent); font-style:normal;}
+  .badge{
+    font-size:12px; padding:6px 13px; border:1px solid var(--line); border-radius:999px;
+    color:var(--muted); font-weight:600; white-space:nowrap; background:var(--surface2);
+  }
+  .head-copy{max-width:1280px; margin:0 auto; padding:32px 32px 36px;}
+  .eyebrow{
+    font-size:12px; font-weight:700; letter-spacing:.16em; color:var(--accent);
+    text-transform:uppercase; display:flex; align-items:center; gap:9px;
+  }
+  .eyebrow::before{content:""; width:24px; height:2px; background:var(--accent); display:inline-block;}
+  .head-copy h1{
+    font-family:var(--serif); font-weight:700; font-size:36px; line-height:1.22;
+    margin:13px 0 12px; color:var(--ink); letter-spacing:-.01em; max-width:780px;
+  }
+  .head-copy p{margin:0; color:var(--muted); font-size:14.5px; max-width:700px;}
+
+  /* ===== 레이아웃 ===== */
+  .wrap{display:grid; grid-template-columns:380px 1fr; gap:24px; padding:28px 32px 64px; max-width:1280px; margin:0 auto;}
   @media(max-width:900px){.wrap{grid-template-columns:1fr}}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);}
-  .card h2{font-size:15px; margin:0; padding:16px 18px; border-bottom:1px solid var(--line); color:var(--text); display:flex; align-items:center; gap:8px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);}
+  .card h2{
+    font-size:14px; margin:0; padding:16px 18px; border-bottom:1px solid var(--line);
+    color:var(--ink); display:flex; align-items:center; gap:8px; font-weight:700;
+  }
   .card h2 small{color:var(--muted); font-weight:500; font-size:12px;}
   .card .body{padding:16px 18px;}
+
+  /* ===== 입력 ===== */
   .row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
   .row:last-child{margin-bottom:0;}
   input,select{
-    background:var(--panel2); color:var(--text); border:1px solid var(--line);
-    border-radius:9px; padding:9px 10px; font-size:13px; font-family:inherit; outline:none; width:100%;
+    background:var(--surface2); color:var(--ink); border:1px solid var(--line);
+    border-radius:10px; padding:10px 11px; font-size:13px; font-family:inherit; outline:none; width:100%;
+    transition:.15s;
   }
-  input:focus,select:focus{border-color:var(--accent);}
-  input[type=date]{color-scheme:dark;}
+  input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(232,98,44,.13);}
+  input[type=date]{color-scheme:light;}
   .row .name{flex:1.2;} .row .area{flex:1;}
-  button{cursor:pointer; font-family:inherit; border:none; border-radius:9px; font-weight:600;}
-  .btn-add{width:100%; padding:9px; background:var(--panel2); color:var(--accent); border:1px dashed var(--line); font-size:13px;}
-  .btn-add:hover{border-color:var(--accent); color:#fff;}
-  .btn-x{background:transparent; color:var(--muted); font-size:16px; padding:4px 8px; border-radius:8px;}
-  .btn-x:hover{color:var(--bad); background:rgba(255,107,129,.1);}
-  .btn-refresh{margin-left:auto; padding:6px 12px; background:var(--panel2); color:var(--accent); border:1px solid var(--line); font-size:12px;}
-  .btn-refresh:hover{border-color:var(--accent); color:#fff;}
+  button{cursor:pointer; font-family:inherit; border:none; border-radius:10px; font-weight:700;}
+  .btn-add{width:100%; padding:10px; background:#fff; color:var(--accent); border:1px dashed var(--accent); font-size:13px;}
+  .btn-add:hover{background:var(--accent-soft);}
+  .btn-x{background:transparent; color:var(--muted); font-size:16px; padding:4px 9px; border-radius:8px; font-weight:600;}
+  .btn-x:hover{color:var(--bad); background:#fbe9e7;}
+  .btn-refresh{
+    margin-left:auto; padding:7px 14px; background:#fff; color:var(--accent);
+    border:1px solid var(--accent); border-radius:999px; font-size:12px;
+  }
+  .btn-refresh:hover{background:var(--accent); color:#fff;}
   .btn-refresh:disabled{opacity:.5; cursor:default;}
   .chips{display:flex; flex-wrap:wrap; gap:8px;}
   .chip{
-    padding:7px 12px; border-radius:999px; border:1px solid var(--line);
-    background:var(--panel2); color:var(--muted); font-size:13px; cursor:pointer; user-select:none; transition:.12s;
+    padding:8px 13px; border-radius:999px; border:1px solid var(--line);
+    background:#fff; color:var(--muted); font-size:13px; cursor:pointer; user-select:none; transition:.13s; font-weight:600;
   }
-  .chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border-color:transparent;}
-  .slider-row{margin-bottom:14px;}
-  .slider-row label{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:5px;}
-  .slider-row label b{color:var(--text);}
+  .chip:hover{border-color:var(--accent); color:var(--accent);}
+  .chip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .slider-row{margin-bottom:15px;}
+  .slider-row label{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .slider-row label b{color:var(--ink);}
   input[type=range]{padding:0; accent-color:var(--accent);}
-  /* status banner */
-  .status{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); margin-bottom:16px; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--panel2);}
-  .dot{width:8px; height:8px; border-radius:50%; background:var(--muted);}
-  .dot.live{background:var(--good); box-shadow:0 0 8px var(--good);}
+
+  /* ===== 상태 배너 ===== */
+  .status{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); margin-bottom:16px; padding:10px 13px; border:1px solid var(--line); border-radius:11px; background:var(--surface2);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--muted); flex:0 0 auto;}
+  .dot.live{background:var(--good); box-shadow:0 0 8px rgba(31,157,107,.6);}
   .dot.loading{background:var(--warn); animation:pulse 1s infinite;}
   .dot.err{background:var(--bad);}
   @keyframes pulse{50%{opacity:.3}}
-  /* results */
-  .hero{
-    background:linear-gradient(135deg,rgba(108,140,255,.18),rgba(139,92,255,.12));
-    border:1px solid var(--accent); border-radius:16px; padding:22px; margin-bottom:18px; position:relative; overflow:hidden;
-  }
-  .hero::after{content:"BEST"; position:absolute; top:14px; right:18px; font-size:12px; font-weight:800; letter-spacing:2px; color:var(--gold); opacity:.85;}
-  .hero .when{font-size:13px; color:var(--muted);}
-  .hero .what{font-size:30px; font-weight:800; margin:4px 0 2px; letter-spacing:-.5px;}
-  .hero .sub{font-size:14px; color:var(--text);}
-  .hero .metrics{display:flex; gap:22px; margin-top:16px; flex-wrap:wrap;}
-  .hero .metric .v{font-size:20px; font-weight:800;}
+
+  /* ===== BEST 추천 (위성 히어로) ===== */
+  .hero{background:var(--surface); border:1px solid var(--accent); border-radius:18px; overflow:hidden; margin-bottom:20px; box-shadow:var(--shadow);}
+  .satmap{position:relative; width:100%; height:240px; overflow:hidden; background:#10151f;}
+  .sat-canvas{position:absolute; width:1280px; height:768px;}
+  .sat-tile{position:absolute; width:256px; height:256px; display:block;}
+  .sat-pin{position:absolute; left:50%; top:50%; transform:translate(-50%,-100%); font-size:34px; line-height:1; filter:drop-shadow(0 4px 5px rgba(0,0,0,.55)); pointer-events:none;}
+  .sat-grad{position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,0) 32%,rgba(0,0,0,0) 58%,rgba(0,0,0,.5));}
+  .best-tag{position:absolute; left:14px; top:14px; background:var(--accent); color:#fff; font-size:11px; font-weight:800; letter-spacing:.13em; padding:6px 11px; border-radius:8px; box-shadow:0 4px 12px rgba(232,98,44,.4);}
+  .sat-place{position:absolute; left:16px; bottom:13px; color:#fff; font-family:var(--serif); font-size:25px; text-shadow:0 2px 10px rgba(0,0,0,.7);}
+  .sat-attr{position:absolute; right:9px; bottom:8px; font-size:10px; color:#fff; background:rgba(0,0,0,.42); padding:2px 7px; border-radius:6px;}
+  .hero-body{padding:20px 22px 22px;}
+  .hero-body .eyebrow{margin-bottom:9px;}
+  .hero .when{font-size:13.5px; color:var(--ink);}
+  .hero .metrics{display:flex; gap:26px; margin-top:16px; flex-wrap:wrap;}
+  .hero .metric .v{font-size:24px; font-weight:800; font-family:var(--serif);}
   .hero .metric .k{font-size:11px; color:var(--muted);}
-  .reasons{margin-top:14px; display:flex; flex-wrap:wrap; gap:8px;}
-  .reason{font-size:12px; padding:5px 10px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid var(--line);}
+  .reasons{margin-top:15px; display:flex; flex-wrap:wrap; gap:8px;}
+  .reason{font-size:12px; padding:6px 11px; border-radius:8px; background:var(--accent-soft); border:1px solid #f1d8c8; color:var(--accent2); font-weight:600;}
+  .maplink{display:inline-block; margin-top:16px; color:var(--accent); font-weight:700; font-size:13px; text-decoration:none;}
+  .maplink:hover{text-decoration:underline;}
+
+  /* ===== 순위 표 ===== */
   table{width:100%; border-collapse:collapse; font-size:13px;}
-  th,td{padding:11px 12px; text-align:left; border-bottom:1px solid var(--line);}
-  th{color:var(--muted); font-weight:600; font-size:12px; position:sticky; top:0; background:var(--panel);}
+  th,td{padding:12px 12px; text-align:left; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:700; font-size:12px; position:sticky; top:0; background:var(--surface);}
   td.score{font-weight:800;}
-  tr.top td{background:rgba(108,140,255,.07);}
-  .rank{display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border-radius:7px; font-weight:800; font-size:12px; background:var(--panel2); color:var(--muted);}
-  tr.top .rank{background:var(--gold); color:#1a1320;}
-  .bar{height:7px; border-radius:4px; background:var(--panel2); overflow:hidden; min-width:70px;}
+  tr.top td{background:rgba(232,98,44,.06);}
+  .rank{display:inline-flex; width:25px; height:25px; align-items:center; justify-content:center; border-radius:8px; font-weight:800; font-size:12px; background:var(--surface2); color:var(--muted);}
+  tr.top .rank{background:var(--accent); color:#fff;}
+  .bar{height:7px; border-radius:4px; background:var(--surface2); overflow:hidden; min-width:70px; border:1px solid var(--line);}
   .bar>i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2));}
-  .pill{padding:3px 8px; border-radius:7px; font-size:12px; font-weight:600;}
-  .src{font-size:10px; padding:2px 6px; border-radius:6px; font-weight:700; margin-left:6px; vertical-align:middle;}
-  .src.live{background:rgba(55,211,155,.16); color:var(--good);}
-  .src.sim{background:rgba(154,160,195,.16); color:var(--muted);}
-  .muted{color:var(--muted);}
-  .foot{padding:14px 18px; border-top:1px solid var(--line); color:var(--muted); font-size:12px;}
-  .empty{padding:40px; text-align:center; color:var(--muted);}
+  .pill{padding:4px 9px; border-radius:8px; font-size:12px; font-weight:700; background:var(--surface2); border:1px solid var(--line);}
+  .src{font-size:10px; padding:2px 7px; border-radius:6px; font-weight:800; margin-left:6px; vertical-align:middle;}
+  .src.live{background:#e3f5ec; color:var(--good);}
+  .src.sim{background:#f0ece4; color:var(--muted);}
+  .foot{padding:15px 18px; border-top:1px solid var(--line); color:var(--muted); font-size:12px;}
+  .empty{padding:44px; text-align:center; color:var(--muted);}
   .scoreBig{font-size:15px;}
 
   /* ===== 모바일 (≤640px) ===== */
   @media(max-width:640px){
-    header{ padding:18px 16px 14px; }
-    header h1{ font-size:21px; line-height:1.3; }
-    header h1 .badge{ margin:8px 0 0; font-size:11px; padding:3px 9px; }
-    header p{ font-size:13px; }
-    .wrap{ padding:16px 14px 40px; gap:16px; }
-    .card .body{ padding:14px; }
-    .card h2{ padding:14px; flex-wrap:wrap; }
-    .btn-refresh{ margin-left:0; }
-    .hero{ padding:18px; }
-    .hero .what{ font-size:26px; }
-    .hero .metrics{ gap:16px; }
+    .head-inner{padding:14px 16px;}
+    .brand-name{font-size:19px;}
+    .badge{font-size:11px; padding:5px 10px;}
+    .head-copy{padding:24px 16px 26px;}
+    .head-copy h1{font-size:25px; margin:11px 0 10px;}
+    .head-copy p{font-size:13px;}
+    .wrap{padding:18px 14px 44px; gap:16px;}
+    .card .body{padding:14px;}
+    .card h2{padding:14px; flex-wrap:wrap;}
+    .btn-refresh{margin-left:0;}
+    .satmap{height:185px;}
+    .sat-place{font-size:21px;}
+    .hero-body{padding:16px;}
+    .hero .metrics{gap:18px;}
+    .hero .metric .v{font-size:21px;}
 
-    /* 결과 표 → 카드형 (글자 세로쪼개짐 방지) */
-    table thead{ display:none; }
-    table, table tbody, table tr, table td{ display:block; width:100%; }
-    table tr{
-      border:1px solid var(--line); border-radius:12px; margin-bottom:10px;
-      padding:6px 12px; background:var(--panel2);
-    }
-    table tr.top{ border-color:var(--accent); background:rgba(108,140,255,.10); }
-    table td{
-      border:none; border-bottom:1px solid rgba(255,255,255,.05);
-      padding:8px 0; display:flex; align-items:center; gap:10px; text-align:left;
-    }
-    table tr td:last-child{ border-bottom:none; }
-    table td::before{
-      content:attr(data-label); color:var(--muted); font-size:12px; font-weight:600;
-      flex:0 0 38%; white-space:nowrap;
-    }
-    table td.score>div{ flex:1; justify-content:flex-end; }
-    table .bar{ flex:1; max-width:130px; }
-    th{ position:static; }
+    /* 결과 표 → 카드형 */
+    table thead{display:none;}
+    table, table tbody, table tr, table td{display:block; width:100%;}
+    table tr{border:1px solid var(--line); border-radius:12px; margin-bottom:10px; padding:6px 12px; background:var(--surface2);}
+    table tr.top{border-color:var(--accent); background:var(--accent-soft);}
+    table td{border:none; border-bottom:1px solid rgba(0,0,0,.06); padding:9px 0; display:flex; align-items:center; gap:10px; text-align:left;}
+    table tr td:last-child{border-bottom:none;}
+    table td::before{content:attr(data-label); color:var(--muted); font-size:12px; font-weight:700; flex:0 0 38%; white-space:nowrap;}
+    table td.score>div{flex:1; justify-content:flex-end;}
+    table .bar{flex:1; max-width:130px;}
+    th{position:static;}
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>모임 일정·장소 추천기 <span class="badge">🌤️ 실시간 날씨 · Open-Meteo</span></h1>
-  <p>참여자 위치 · <b>실제 날씨 예보</b> · 이동시간을 종합해 <b>가장 공평하고 합리적인 날짜와 장소</b>를 추천합니다. 날씨는 Open-Meteo 실시간 예보를 사용하며, 오프라인이면 자동 시뮬레이션으로 대체됩니다.</p>
+  <div class="head-inner">
+    <div class="brand">
+      <span class="brand-mark">⌂</span>
+      <span class="brand-name">모임<em>플래너</em></span>
+    </div>
+    <span class="badge">🌤️ 실시간 날씨 · Open-Meteo</span>
+  </div>
+  <div class="head-copy">
+    <div class="eyebrow">Smart Meeting Planner</div>
+    <h1>모두에게 <span class="accent">가장 공평한</span><br>모임 날짜와 장소를 찾아드립니다</h1>
+    <p>참여자 위치 · 실제 날씨 예보 · 이동시간을 종합해 최적의 조합을 추천합니다. 날씨는 Open-Meteo 실시간 예보를 사용하며, 오프라인이면 자동 시뮬레이션으로 대체됩니다.</p>
+  </div>
 </header>
 
 <div class="wrap">
@@ -199,7 +246,7 @@
       이동시간은 지역 좌표 간 거리 기반 대중교통 추정치입니다. ·
       날씨는 <b>Open-Meteo 실시간 예보</b>(좌표별, 최대 16일)이며, 예보 범위를 벗어난 날짜이거나 오프라인이면
       <b>시뮬레이션</b> 값으로 자동 대체됩니다(행의 <span class="src live">예보</span>/<span class="src sim">추정</span> 배지로 구분). ·
-      종합점수 100점에 가까울수록 모두에게 합리적인 조합입니다.
+      위성 이미지는 Esri World Imagery(키 불필요)를 사용합니다.
     </div>
   </div>
 </div>
@@ -229,6 +276,26 @@ function travelMin(fromArea,toArea){
   return Math.round(8 + d*2.2);
 }
 
+/* ===== 위성 지도 (Esri World Imagery 타일 모자이크, API 키 불필요) ===== */
+function tileXY(lat,lng,z){
+  const n=2**z, x=(lng+180)/360*n;
+  const lr=lat*Math.PI/180;
+  const y=(1 - Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2 * n;
+  return {x,y};
+}
+function satCanvas(lat,lng){
+  const z=16, p=tileXY(lat,lng,z);
+  const cols=5, rows=3, startX=Math.floor(p.x)-2, startY=Math.floor(p.y)-1;
+  const px=(p.x-startX)*256, py=(p.y-startY)*256;
+  let tiles="";
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const tx=startX+c, ty=startY+r;
+    tiles+=`<img class="sat-tile" loading="lazy" style="left:${c*256}px;top:${r*256}px"
+      src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}">`;
+  }
+  return `<div class="sat-canvas" style="left:calc(50% - ${px}px);top:calc(50% - ${py}px)">${tiles}</div><div class="sat-pin">📍</div>`;
+}
+
 /* ===== WMO 날씨코드 → 한글/이모지/패널티 ===== */
 const WMO = {
   0:{n:"맑음",i:"☀️",p:0}, 1:{n:"대체로 맑음",i:"🌤️",p:2}, 2:{n:"부분 흐림",i:"⛅",p:5},
@@ -249,7 +316,7 @@ function tempPenalty(t){ if(t>=31) return (t-30)*3; if(t<=-1) return (-1-t)*2+4;
 function buildLive(code, tmax, tmin, precip){
   const info=codeInfo(code);
   const temp=Math.round((tmax+tmin)/2);
-  const pp = (precip!=null) ? Math.round(precip/12) : 0; // 강수확률 기여
+  const pp = (precip!=null) ? Math.round(precip/12) : 0;
   return {n:info.n, i:info.i, temp, precip, penalty: info.p + tempPenalty(temp) + pp, source:"live"};
 }
 
@@ -271,7 +338,7 @@ function weatherSim(dateStr){
 }
 
 /* ===== 날씨 캐시 + 실시간 fetch ===== */
-const liveCache = {};   // liveCache[place][date] = weatherObj
+const liveCache = {};
 let lastStatus = {state:"idle", live:0, sim:0};
 
 async function fetchPlaceWeather(place){
@@ -292,7 +359,7 @@ async function fetchPlaceWeather(place){
 function weatherResolved(place,date){
   const m=liveCache[place];
   if(m && m[date]) return m[date];
-  return weatherSim(date);  // 폴백
+  return weatherSim(date);
 }
 
 /* ===== 상태 ===== */
@@ -411,18 +478,28 @@ function renderResult(combos){
   }
   const best=combos[0];
   const reasons=reasonsFor(best,combos);
+  const coord=AREAS[best.place]||[37.5665,126.9780];
+  const blat=coord[0], blng=coord[1];
   el.innerHTML=`
     <div class="hero">
-      <div class="when">${fmtDate(best.date)}</div>
-      <div class="what">📍 ${best.place}</div>
-      <div class="sub">${best.weather.i} ${best.weather.n} · ${best.weather.temp}℃ ${srcBadge(best.weather)}
-        ${best.weather.precip!=null?`· 강수확률 ${best.weather.precip}%`:""}</div>
-      <div class="metrics">
-        <div class="metric"><div class="v" style="color:var(--gold)">${best.score}점</div><div class="k">종합점수</div></div>
-        <div class="metric"><div class="v">${Math.round(best.avg)}분</div><div class="k">평균 이동</div></div>
-        <div class="metric"><div class="v">${Math.round(best.fair)}분</div><div class="k">이동 편차</div></div>
+      <div class="satmap">
+        ${satCanvas(blat,blng)}
+        <div class="sat-grad"></div>
+        <div class="best-tag">BEST PICK</div>
+        <div class="sat-place">📍 ${best.place}</div>
+        <div class="sat-attr">위성 이미지 · Esri</div>
       </div>
-      <div class="reasons">${reasons.map(r=>`<span class="reason">${r}</span>`).join("")}</div>
+      <div class="hero-body">
+        <div class="eyebrow">최종 추천</div>
+        <div class="when"><b>${fmtDate(best.date)}</b> · ${best.weather.i} ${best.weather.n} ${best.weather.temp}℃ ${srcBadge(best.weather)}${best.weather.precip!=null?` · 강수확률 ${best.weather.precip}%`:""}</div>
+        <div class="metrics">
+          <div class="metric"><div class="v" style="color:var(--accent)">${best.score}점</div><div class="k">종합점수</div></div>
+          <div class="metric"><div class="v">${Math.round(best.avg)}분</div><div class="k">평균 이동</div></div>
+          <div class="metric"><div class="v">${Math.round(best.fair)}분</div><div class="k">이동 편차</div></div>
+        </div>
+        <div class="reasons">${reasons.map(r=>`<span class="reason">${r}</span>`).join("")}</div>
+        <a class="maplink" href="https://www.openstreetmap.org/?mlat=${blat}&mlon=${blng}#map=15/${blat}/${blng}" target="_blank" rel="noopener">큰 지도에서 위치 보기 →</a>
+      </div>
     </div>
     <table>
       <thead><tr>
@@ -448,18 +525,16 @@ function renderResult(combos){
     </table>
     <div style="margin-top:14px;font-size:12px;color:var(--muted)">
       참여자별 이동시간(분) — 1위 조합 기준:
-      ${best.times.map((t,i)=>`<span class="pill" style="background:var(--panel2);margin-right:6px;">${people[i]?.name||"-"} ${t}</span>`).join("")}
+      ${best.times.map((t,i)=>`<span class="pill" style="margin-right:6px;">${people[i]?.name||"-"} ${t}</span>`).join("")}
     </div>`;
 }
 
-/* 점수만 재계산 (캐시 사용, fetch 없음) — 슬라이더/참여자/날짜 변경 시 */
+/* 점수만 재계산 (캐시 사용, fetch 없음) */
 function recompute(){
   const combos=compute();
-  // 상태 배너: 현재 조합의 출처 집계
   let live=0,sim=0;
   combos.forEach(c=>{ c.weather.source==="live"?live++:sim++; });
   if(lastStatus.state!=="loading"){
-    // 카운트만 갱신, 오프라인(error) 표기는 유지
     const st = lastStatus.state==="error" ? "error" : "live";
     lastStatus = {state:st, live, sim};
   }
@@ -467,19 +542,17 @@ function recompute(){
   renderResult(combos);
 }
 
-/* 실시간 날씨 fetch 후 재계산 — 장소 변경/새로고침/초기화 시 */
+/* 실시간 날씨 fetch 후 재계산 */
 async function refreshWeather(){
   const btn=document.getElementById("refreshBtn");
   btn.disabled=true;
   lastStatus={state:"loading",live:0,sim:0}; renderStatus();
   const targets=[...places].filter(p=>AREAS[p]);
   const results=await Promise.allSettled(targets.map(p=>fetchPlaceWeather(p)));
-  let anyOk=false, anyFail=false;
+  let anyOk=false;
   results.forEach((r,idx)=>{
     if(r.status==="fulfilled"){ liveCache[targets[idx]]=r.value; anyOk=true; }
-    else { anyFail=true; }
   });
-  // 출처 집계 후 상태 결정
   const combos=compute();
   let live=0,sim=0; combos.forEach(c=>c.weather.source==="live"?live++:sim++);
   lastStatus = {state: (anyOk? "live" : "error"), live, sim};
@@ -489,8 +562,8 @@ async function refreshWeather(){
 
 /* ===== 초기화 ===== */
 renderPeople(); renderDates(); renderPlaces();
-recompute();        // 즉시 시뮬레이션 기반 결과 표시 (네트워크 대기 없이)
-refreshWeather();   // 실시간 예보로 갱신
+recompute();
+refreshWeather();
 </script>
 </body>
 </html>
