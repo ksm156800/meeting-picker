@@ -1,0 +1,7 @@
+# OMC 운영 상태 (자동 생성물)
+.omc/
+# 학습용 샘플 폴더
+sandbox/
+# OS/에디터
+Thumbs.db
+.DS_Store

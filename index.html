@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>모임 일정·장소 추천기</title>
+<style>
+  :root{
+    --bg:#0f1222; --panel:#171a2e; --panel2:#1e2240; --line:#2a2f55;
+    --text:#e8eaf6; --muted:#9aa0c3; --accent:#6c8cff; --accent2:#8b5cff;
+    --good:#37d39b; --warn:#ffcf5c; --bad:#ff6b81; --gold:#ffd25c;
+    --shadow:0 10px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:"Malgun Gothic","Segoe UI",-apple-system,Roboto,sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%,#22264a 0%,var(--bg) 55%);
+    color:var(--text); min-height:100vh; line-height:1.5;
+  }
+  header{
+    padding:28px 32px 20px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(108,140,255,.10),transparent);
+  }
+  header h1{margin:0; font-size:26px; letter-spacing:-.3px;}
+  header h1 .badge{
+    font-size:12px; vertical-align:middle; margin-left:10px; padding:4px 10px;
+    border:1px solid var(--line); border-radius:999px; color:var(--muted); font-weight:600;
+  }
+  header p{margin:8px 0 0; color:var(--muted); font-size:14px;}
+  .wrap{display:grid; grid-template-columns:380px 1fr; gap:24px; padding:24px 32px 56px; max-width:1280px; margin:0 auto;}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);}
+  .card h2{font-size:15px; margin:0; padding:16px 18px; border-bottom:1px solid var(--line); color:var(--text); display:flex; align-items:center; gap:8px;}
+  .card h2 small{color:var(--muted); font-weight:500; font-size:12px;}
+  .card .body{padding:16px 18px;}
+  .row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+  .row:last-child{margin-bottom:0;}
+  input,select{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:9px; padding:9px 10px; font-size:13px; font-family:inherit; outline:none; width:100%;
+  }
+  input:focus,select:focus{border-color:var(--accent);}
+  input[type=date]{color-scheme:dark;}
+  .row .name{flex:1.2;} .row .area{flex:1;}
+  button{cursor:pointer; font-family:inherit; border:none; border-radius:9px; font-weight:600;}
+  .btn-add{width:100%; padding:9px; background:var(--panel2); color:var(--accent); border:1px dashed var(--line); font-size:13px;}
+  .btn-add:hover{border-color:var(--accent); color:#fff;}
+  .btn-x{background:transparent; color:var(--muted); font-size:16px; padding:4px 8px; border-radius:8px;}
+  .btn-x:hover{color:var(--bad); background:rgba(255,107,129,.1);}
+  .btn-refresh{margin-left:auto; padding:6px 12px; background:var(--panel2); color:var(--accent); border:1px solid var(--line); font-size:12px;}
+  .btn-refresh:hover{border-color:var(--accent); color:#fff;}
+  .btn-refresh:disabled{opacity:.5; cursor:default;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    padding:7px 12px; border-radius:999px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--muted); font-size:13px; cursor:pointer; user-select:none; transition:.12s;
+  }
+  .chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border-color:transparent;}
+  .slider-row{margin-bottom:14px;}
+  .slider-row label{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:5px;}
+  .slider-row label b{color:var(--text);}
+  input[type=range]{padding:0; accent-color:var(--accent);}
+  /* status banner */
+  .status{display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); margin-bottom:16px; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--panel2);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--muted);}
+  .dot.live{background:var(--good); box-shadow:0 0 8px var(--good);}
+  .dot.loading{background:var(--warn); animation:pulse 1s infinite;}
+  .dot.err{background:var(--bad);}
+  @keyframes pulse{50%{opacity:.3}}
+  /* results */
+  .hero{
+    background:linear-gradient(135deg,rgba(108,140,255,.18),rgba(139,92,255,.12));
+    border:1px solid var(--accent); border-radius:16px; padding:22px; margin-bottom:18px; position:relative; overflow:hidden;
+  }
+  .hero::after{content:"BEST"; position:absolute; top:14px; right:18px; font-size:12px; font-weight:800; letter-spacing:2px; color:var(--gold); opacity:.85;}
+  .hero .when{font-size:13px; color:var(--muted);}
+  .hero .what{font-size:30px; font-weight:800; margin:4px 0 2px; letter-spacing:-.5px;}
+  .hero .sub{font-size:14px; color:var(--text);}
+  .hero .metrics{display:flex; gap:22px; margin-top:16px; flex-wrap:wrap;}
+  .hero .metric .v{font-size:20px; font-weight:800;}
+  .hero .metric .k{font-size:11px; color:var(--muted);}
+  .reasons{margin-top:14px; display:flex; flex-wrap:wrap; gap:8px;}
+  .reason{font-size:12px; padding:5px 10px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid var(--line);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{padding:11px 12px; text-align:left; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:600; font-size:12px; position:sticky; top:0; background:var(--panel);}
+  td.score{font-weight:800;}
+  tr.top td{background:rgba(108,140,255,.07);}
+  .rank{display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border-radius:7px; font-weight:800; font-size:12px; background:var(--panel2); color:var(--muted);}
+  tr.top .rank{background:var(--gold); color:#1a1320;}
+  .bar{height:7px; border-radius:4px; background:var(--panel2); overflow:hidden; min-width:70px;}
+  .bar>i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .pill{padding:3px 8px; border-radius:7px; font-size:12px; font-weight:600;}
+  .src{font-size:10px; padding:2px 6px; border-radius:6px; font-weight:700; margin-left:6px; vertical-align:middle;}
+  .src.live{background:rgba(55,211,155,.16); color:var(--good);}
+  .src.sim{background:rgba(154,160,195,.16); color:var(--muted);}
+  .muted{color:var(--muted);}
+  .foot{padding:14px 18px; border-top:1px solid var(--line); color:var(--muted); font-size:12px;}
+  .empty{padding:40px; text-align:center; color:var(--muted);}
+  .scoreBig{font-size:15px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>모임 일정·장소 추천기 <span class="badge">🌤️ 실시간 날씨 · Open-Meteo</span></h1>
+  <p>참여자 위치 · <b>실제 날씨 예보</b> · 이동시간을 종합해 <b>가장 공평하고 합리적인 날짜와 장소</b>를 추천합니다. 날씨는 Open-Meteo 실시간 예보를 사용하며, 오프라인이면 자동 시뮬레이션으로 대체됩니다.</p>
+</header>
+
+<div class="wrap">
+  <!-- ================= 입력 ================= -->
+  <div>
+    <div class="card" style="margin-bottom:18px;">
+      <h2>👥 참여자 <small>거주 지역 기준 이동시간 계산</small></h2>
+      <div class="body">
+        <div id="people"></div>
+        <button class="btn-add" onclick="addPerson()">+ 참여자 추가</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px;">
+      <h2>📅 후보 날짜</h2>
+      <div class="body">
+        <div id="dates"></div>
+        <button class="btn-add" onclick="addDate()">+ 날짜 추가</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px;">
+      <h2>📍 후보 장소 <small>모임 장소 후보를 선택</small></h2>
+      <div class="body"><div class="chips" id="places"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>⚖️ 우선순위 가중치</h2>
+      <div class="body">
+        <div class="slider-row">
+          <label>이동시간 (짧을수록 ↑) <b id="wTravelV">1.0</b></label>
+          <input type="range" id="wTravel" min="0" max="2" step="0.1" value="1" oninput="recompute()">
+        </div>
+        <div class="slider-row">
+          <label>공평성 (편차 적을수록 ↑) <b id="wFairV">0.6</b></label>
+          <input type="range" id="wFair" min="0" max="2" step="0.1" value="0.6" oninput="recompute()">
+        </div>
+        <div class="slider-row">
+          <label>날씨 (좋을수록 ↑) <b id="wWeatherV">1.0</b></label>
+          <input type="range" id="wWeather" min="0" max="2" step="0.1" value="1" oninput="recompute()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 결과 ================= -->
+  <div class="card">
+    <h2>🏆 추천 결과 <small id="comboCount"></small>
+      <button class="btn-refresh" id="refreshBtn" onclick="refreshWeather()">🔄 날씨 새로고침</button>
+    </h2>
+    <div class="body">
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">준비 중…</span></div>
+      <div id="result"></div>
+    </div>
+    <div class="foot">
+      이동시간은 지역 좌표 간 거리 기반 대중교통 추정치입니다. ·
+      날씨는 <b>Open-Meteo 실시간 예보</b>(좌표별, 최대 16일)이며, 예보 범위를 벗어난 날짜이거나 오프라인이면
+      <b>시뮬레이션</b> 값으로 자동 대체됩니다(행의 <span class="src live">예보</span>/<span class="src sim">추정</span> 배지로 구분). ·
+      종합점수 100점에 가까울수록 모두에게 합리적인 조합입니다.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 내장 지역 좌표 (서울·수도권) ===== */
+const AREAS = {
+  "강남역":[37.4979,127.0276], "홍대입구":[37.5572,126.9245], "신촌":[37.5559,126.9368],
+  "종로(종각)":[37.5704,126.9831], "잠실":[37.5133,127.1000], "여의도":[37.5215,126.9242],
+  "건대입구":[37.5404,127.0703], "성수":[37.5446,127.0560], "수유(강북)":[37.6379,127.0256],
+  "사당":[37.4765,126.9816], "구로디지털":[37.4853,126.9015], "수원":[37.2636,127.0286],
+  "부평(인천)":[37.4895,126.7246], "판교":[37.3947,127.1112]
+};
+const AREA_KEYS = Object.keys(AREAS);
+
+/* ===== 거리/이동시간 모델 (직선거리 → 대중교통 추정) ===== */
+function haversine(a,b){
+  const R=6371, rad=x=>x*Math.PI/180;
+  const dLat=rad(b[0]-a[0]), dLng=rad(b[1]-a[1]);
+  const h=Math.sin(dLat/2)**2 + Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function travelMin(fromArea,toArea){
+  if(!AREAS[fromArea]||!AREAS[toArea]) return 30;
+  if(fromArea===toArea) return 5;
+  const d=haversine(AREAS[fromArea],AREAS[toArea]);
+  return Math.round(8 + d*2.2);
+}
+
+/* ===== WMO 날씨코드 → 한글/이모지/패널티 ===== */
+const WMO = {
+  0:{n:"맑음",i:"☀️",p:0}, 1:{n:"대체로 맑음",i:"🌤️",p:2}, 2:{n:"부분 흐림",i:"⛅",p:5},
+  3:{n:"흐림",i:"☁️",p:10}, 45:{n:"안개",i:"🌫️",p:12}, 48:{n:"짙은 안개",i:"🌫️",p:13},
+  51:{n:"약한 이슬비",i:"🌦️",p:16}, 53:{n:"이슬비",i:"🌦️",p:19}, 55:{n:"짙은 이슬비",i:"🌧️",p:23},
+  56:{n:"어는 이슬비",i:"🌧️",p:26}, 57:{n:"어는 이슬비",i:"🌧️",p:29},
+  61:{n:"약한 비",i:"🌧️",p:24}, 63:{n:"비",i:"🌧️",p:30}, 65:{n:"강한 비",i:"🌧️",p:37},
+  66:{n:"어는 비",i:"🌧️",p:34}, 67:{n:"어는 비",i:"🌧️",p:39},
+  71:{n:"약한 눈",i:"🌨️",p:26}, 73:{n:"눈",i:"🌨️",p:32}, 75:{n:"강한 눈",i:"❄️",p:39}, 77:{n:"싸락눈",i:"🌨️",p:30},
+  80:{n:"약한 소나기",i:"🌦️",p:24}, 81:{n:"소나기",i:"🌧️",p:31}, 82:{n:"강한 소나기",i:"⛈️",p:38},
+  85:{n:"눈 소나기",i:"🌨️",p:33}, 86:{n:"강한 눈 소나기",i:"❄️",p:39},
+  95:{n:"뇌우",i:"⛈️",p:42}, 96:{n:"우박 뇌우",i:"⛈️",p:47}, 99:{n:"강한 우박 뇌우",i:"⛈️",p:52}
+};
+function codeInfo(c){ return WMO[c] || {n:"흐림",i:"☁️",p:10}; }
+function tempPenalty(t){ if(t>=31) return (t-30)*3; if(t<=-1) return (-1-t)*2+4; return 0; }
+
+/* 실제 예보(API) → 표준 날씨 객체 */
+function buildLive(code, tmax, tmin, precip){
+  const info=codeInfo(code);
+  const temp=Math.round((tmax+tmin)/2);
+  const pp = (precip!=null) ? Math.round(precip/12) : 0; // 강수확률 기여
+  return {n:info.n, i:info.i, temp, precip, penalty: info.p + tempPenalty(temp) + pp, source:"live"};
+}
+
+/* ===== 결정론적 날씨 시뮬레이션 (오프라인/범위밖 폴백) ===== */
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function weatherSim(dateStr){
+  if(!dateStr) return {n:"미정",i:"❔",temp:null,penalty:0,source:"sim"};
+  const h=hashStr("weather|"+dateStr);
+  const r=h%100; let t;
+  if(r<45)      t={n:"맑음",     i:"☀️", p:0};
+  else if(r<68) t={n:"구름 조금", i:"🌤️", p:4};
+  else if(r<84) t={n:"흐림",     i:"☁️", p:11};
+  else if(r<96) t={n:"비",       i:"🌧️", p:30};
+  else          t={n:"소나기",   i:"⛈️", p:38};
+  const m=parseInt(dateStr.slice(5,7))||7;
+  const base=[2,4,9,15,20,24,27,28,24,18,11,4][m-1];
+  const temp=base + ((h>>>9)%9) - 4;
+  return {...t, temp, penalty:t.p+tempPenalty(temp), source:"sim"};
+}
+
+/* ===== 날씨 캐시 + 실시간 fetch ===== */
+const liveCache = {};   // liveCache[place][date] = weatherObj
+let lastStatus = {state:"idle", live:0, sim:0};
+
+async function fetchPlaceWeather(place){
+  const [lat,lng]=AREAS[place];
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`
+    +`&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max`
+    +`&forecast_days=16&timezone=Asia%2FSeoul`;
+  const res=await fetch(url);
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const j=await res.json(); const d=j.daily; const map={};
+  d.time.forEach((t,idx)=>{
+    map[t]=buildLive(d.weather_code[idx], d.temperature_2m_max[idx], d.temperature_2m_min[idx],
+                     d.precipitation_probability_max ? d.precipitation_probability_max[idx] : null);
+  });
+  return map;
+}
+
+function weatherResolved(place,date){
+  const m=liveCache[place];
+  if(m && m[date]) return m[date];
+  return weatherSim(date);  // 폴백
+}
+
+/* ===== 상태 ===== */
+let people = [
+  {name:"지훈", area:"수유(강북)"},
+  {name:"민서", area:"판교"},
+  {name:"예찬", area:"여의도"},
+  {name:"소연", area:"부평(인천)"}
+];
+let dates = ["2026-07-04","2026-07-05","2026-07-11"];
+let places = new Set(["강남역","종로(종각)","건대입구","홍대입구"]);
+
+/* ===== 입력 렌더 ===== */
+function renderPeople(){
+  document.getElementById("people").innerHTML = people.map((p,i)=>`
+    <div class="row">
+      <input class="name" value="${p.name}" placeholder="이름" oninput="people[${i}].name=this.value;recompute()">
+      <select class="area" onchange="people[${i}].area=this.value;recompute()">
+        ${AREA_KEYS.map(a=>`<option ${a===p.area?'selected':''}>${a}</option>`).join("")}
+      </select>
+      <button class="btn-x" onclick="people.splice(${i},1);renderPeople();recompute()">×</button>
+    </div>`).join("");
+}
+function addPerson(){ people.push({name:"참여자"+(people.length+1), area:AREA_KEYS[0]}); renderPeople(); recompute(); }
+
+function renderDates(){
+  document.getElementById("dates").innerHTML = dates.map((d,i)=>`
+    <div class="row">
+      <input type="date" value="${d}" onchange="dates[${i}]=this.value;recompute()">
+      <button class="btn-x" onclick="dates.splice(${i},1);renderDates();recompute()">×</button>
+    </div>`).join("");
+}
+function addDate(){
+  const last=dates[dates.length-1]||"2026-07-04";
+  const d=new Date(last+"T00:00:00"); d.setDate(d.getDate()+1);
+  dates.push(d.toISOString().slice(0,10)); renderDates(); recompute();
+}
+
+function renderPlaces(){
+  document.getElementById("places").innerHTML = AREA_KEYS.map(a=>
+    `<span class="chip ${places.has(a)?'on':''}" onclick="togglePlace('${a}')">${a}</span>`).join("");
+}
+function togglePlace(a){ places.has(a)?places.delete(a):places.add(a); renderPlaces(); refreshWeather(); }
+
+/* ===== 점수 계산 ===== */
+function compute(){
+  const wT=+document.getElementById("wTravel").value;
+  const wF=+document.getElementById("wFair").value;
+  const wW=+document.getElementById("wWeather").value;
+  document.getElementById("wTravelV").textContent=wT.toFixed(1);
+  document.getElementById("wFairV").textContent=wF.toFixed(1);
+  document.getElementById("wWeatherV").textContent=wW.toFixed(1);
+
+  const validDates=dates.filter(Boolean);
+  const validPlaces=[...places];
+  const combos=[];
+  for(const date of validDates){
+    for(const place of validPlaces){
+      const w=weatherResolved(place,date);
+      const times=people.map(p=>travelMin(p.area,place));
+      const avg=times.reduce((a,b)=>a+b,0)/(times.length||1);
+      const fair=times.length?Math.max(...times)-Math.min(...times):0;
+      const cost = wT*avg + wF*fair + wW*w.penalty;
+      combos.push({date,place,weather:w,times,avg,fair,cost});
+    }
+  }
+  if(combos.length){
+    const costs=combos.map(c=>c.cost);
+    const min=Math.min(...costs), max=Math.max(...costs);
+    combos.forEach(c=>{
+      const norm = max===min ? 1 : (max-c.cost)/(max-min);
+      c.score = Math.round(40 + 60*norm);
+    });
+    combos.sort((a,b)=>a.cost-b.cost);
+  }
+  return combos;
+}
+
+/* ===== 결과 렌더 ===== */
+function fmtDate(s){
+  const d=new Date(s+"T00:00:00"); const wd=["일","월","화","수","목","금","토"][d.getDay()];
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${wd})`;
+}
+function srcBadge(w){ return w.source==="live"
+  ? `<span class="src live">예보</span>` : `<span class="src sim">추정</span>`; }
+function reasonsFor(c,all){
+  const r=[];
+  const bestAvg=Math.min(...all.map(x=>x.avg));
+  const bestFair=Math.min(...all.map(x=>x.fair));
+  if(c.avg<=bestAvg+1) r.push("⏱️ 평균 이동시간 최저");
+  if(c.fair<=bestFair+1) r.push("⚖️ 가장 공평한 동선");
+  if(c.weather.penalty===0) r.push("☀️ 날씨 쾌적");
+  else if(c.weather.penalty<=6) r.push("🌤️ 날씨 무난");
+  if(c.weather.penalty>=28) r.push("☔ 악천후 주의");
+  if(c.weather.source==="live") r.push("📡 실시간 예보 반영");
+  return r.length?r:["균형 잡힌 선택"];
+}
+
+function renderStatus(){
+  const el=document.getElementById("status"); const tx=document.getElementById("statusText");
+  const dot=el.querySelector(".dot");
+  dot.className="dot";
+  if(lastStatus.state==="loading"){ dot.classList.add("loading"); tx.textContent="실시간 날씨 예보를 불러오는 중…"; }
+  else if(lastStatus.state==="error"){ dot.classList.add("err"); tx.textContent="예보 서버에 연결하지 못해 시뮬레이션 값으로 계산했습니다 (오프라인 모드)."; }
+  else if(lastStatus.state==="live"){ dot.classList.add("live");
+    tx.innerHTML=`실시간 예보 적용 — <b>예보 ${lastStatus.live}건</b>${lastStatus.sim?` · 추정 ${lastStatus.sim}건(예보 범위 밖)`:""}`; }
+  else { tx.textContent="준비 중…"; }
+}
+
+function renderResult(combos){
+  const el=document.getElementById("result");
+  document.getElementById("comboCount").textContent = combos.length?`${combos.length}개 조합 비교`:"";
+  if(!combos.length){
+    el.innerHTML=`<div class="empty">날짜와 장소를 1개 이상 선택하면 추천이 표시됩니다.</div>`;
+    return;
+  }
+  const best=combos[0];
+  const reasons=reasonsFor(best,combos);
+  el.innerHTML=`
+    <div class="hero">
+      <div class="when">${fmtDate(best.date)}</div>
+      <div class="what">📍 ${best.place}</div>
+      <div class="sub">${best.weather.i} ${best.weather.n} · ${best.weather.temp}℃ ${srcBadge(best.weather)}
+        ${best.weather.precip!=null?`· 강수확률 ${best.weather.precip}%`:""}</div>
+      <div class="metrics">
+        <div class="metric"><div class="v" style="color:var(--gold)">${best.score}점</div><div class="k">종합점수</div></div>
+        <div class="metric"><div class="v">${Math.round(best.avg)}분</div><div class="k">평균 이동</div></div>
+        <div class="metric"><div class="v">${Math.round(best.fair)}분</div><div class="k">이동 편차</div></div>
+      </div>
+      <div class="reasons">${reasons.map(r=>`<span class="reason">${r}</span>`).join("")}</div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>날짜</th><th>장소</th><th>날씨</th><th>평균이동</th><th>편차</th><th>종합점수</th>
+      </tr></thead>
+      <tbody>
+        ${combos.map((c,i)=>`
+          <tr class="${i===0?'top':''}">
+            <td><span class="rank">${i+1}</span></td>
+            <td>${fmtDate(c.date)}</td>
+            <td><b>${c.place}</b></td>
+            <td><span class="muted">${c.weather.i} ${c.weather.n} ${c.weather.temp}℃</span>${srcBadge(c.weather)}</td>
+            <td>${Math.round(c.avg)}분</td>
+            <td>${Math.round(c.fair)}분</td>
+            <td class="score">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="scoreBig" style="color:${c.score>=80?'var(--good)':c.score>=60?'var(--warn)':'var(--bad)'}">${c.score}</span>
+                <span class="bar"><i style="width:${c.score}%"></i></span>
+              </div>
+            </td>
+          </tr>`).join("")}
+      </tbody>
+    </table>
+    <div style="margin-top:14px;font-size:12px;color:var(--muted)">
+      참여자별 이동시간(분) — 1위 조합 기준:
+      ${best.times.map((t,i)=>`<span class="pill" style="background:var(--panel2);margin-right:6px;">${people[i]?.name||"-"} ${t}</span>`).join("")}
+    </div>`;
+}
+
+/* 점수만 재계산 (캐시 사용, fetch 없음) — 슬라이더/참여자/날짜 변경 시 */
+function recompute(){
+  const combos=compute();
+  // 상태 배너: 현재 조합의 출처 집계
+  let live=0,sim=0;
+  combos.forEach(c=>{ c.weather.source==="live"?live++:sim++; });
+  if(lastStatus.state!=="loading"){
+    // 카운트만 갱신, 오프라인(error) 표기는 유지
+    const st = lastStatus.state==="error" ? "error" : "live";
+    lastStatus = {state:st, live, sim};
+  }
+  renderStatus();
+  renderResult(combos);
+}
+
+/* 실시간 날씨 fetch 후 재계산 — 장소 변경/새로고침/초기화 시 */
+async function refreshWeather(){
+  const btn=document.getElementById("refreshBtn");
+  btn.disabled=true;
+  lastStatus={state:"loading",live:0,sim:0}; renderStatus();
+  const targets=[...places].filter(p=>AREAS[p]);
+  const results=await Promise.allSettled(targets.map(p=>fetchPlaceWeather(p)));
+  let anyOk=false, anyFail=false;
+  results.forEach((r,idx)=>{
+    if(r.status==="fulfilled"){ liveCache[targets[idx]]=r.value; anyOk=true; }
+    else { anyFail=true; }
+  });
+  // 출처 집계 후 상태 결정
+  const combos=compute();
+  let live=0,sim=0; combos.forEach(c=>c.weather.source==="live"?live++:sim++);
+  lastStatus = {state: (anyOk? "live" : "error"), live, sim};
+  renderStatus(); renderResult(combos);
+  btn.disabled=false;
+}
+
+/* ===== 초기화 ===== */
+renderPeople(); renderDates(); renderPlaces();
+recompute();        // 즉시 시뮬레이션 기반 결과 표시 (네트워크 대기 없이)
+refreshWeather();   // 실시간 예보로 갱신
+</script>
+</body>
+</html>
