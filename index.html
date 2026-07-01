@@ -361,7 +361,11 @@ function compute(){
       const w=weatherResolved(place,date);
       const times=people.map(p=>travelMin(p.area,place));
       const avg=times.reduce((a,b)=>a+b,0)/(times.length||1);
-      const fair=times.length?Math.max(...times)-Math.min(...times):0;
+      // 공평성 지표 = 평균절대편차(MAD). 예전엔 (최대-최소) 범위를 썼는데,
+      // 3명이 같은 곳·1명이 딴 곳일 때 다수 위치를 과도하게 벌점 처리해
+      // 엉뚱한 중간 지점을 고르는 문제가 있었다. MAD는 '대부분이 가깝다'는
+      // 사실을 반영하므로, 소수만 이동하면 되는 다수 위치를 자연히 선호한다.
+      const fair=times.length?times.reduce((s,t)=>s+Math.abs(t-avg),0)/times.length:0;
       const cost = wT*avg + wF*fair + wW*w.penalty;
       combos.push({date,place,weather:w,times,avg,fair,cost});
     }
